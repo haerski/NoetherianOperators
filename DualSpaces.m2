@@ -639,20 +639,20 @@ sanityCheck = (nops, I) -> (
     all(foo, i -> sub(i,ring I)%(radical I) == 0)
 )
 
-
+-- TODO degree lmit not needed
 noetherianOperators = method(Options => {DegreeLimit => 5, DependentSet => null}) 
 noetherianOperators (Ideal, Ideal) := List => opts -> (I, P) -> (
     R := ring I;
     depVars := if opts.DependentSet === null then gens R - set support first independentSets P
             else opts.DependentSet;
     indVars := gens R - set depVars;
-    S := (frac((coefficientRing R)[indVars]))[depVars];
+    S := (frac((coefficientRing R)(monoid[indVars])))(monoid[depVars]);
     SradI := sub(P, S);
     SI := sub(I,S);
     -- S := (S'/II)[depVars];
     -- S := (frac((coefficientRing R)[indVars]))[depVars];
     dS := zeroDimensionalDual(SradI,SI,Normalize=>false);
-    return flatten entries gens dS
+    flatten entries gens dS
 )
 noetherianOperators (Ideal) := List => opts -> (I) -> noetherianOperators(I, ideal gens radical I, opts)
 noetherianOperators (Ideal, Point) := List => opts -> (I, p) -> (
