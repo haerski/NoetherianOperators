@@ -14,7 +14,7 @@ Q = ideal((x_1^2 - x_3)^2, x_2 - x_3 * (x_1^2 - x_3))
 P = radical Q
 noetherianOperators(Q,P)
 
--- Example 3.16, through punctual Hilber scheme
+-- Example 3.16, through punctual Hilbert scheme
 y = symbol y;
 F = frac(R/P)
 S = F[y_1,y_2]
@@ -40,3 +40,11 @@ numBasis = denBasis = basis(0,1,S)
 rationalInterpolation(ts, vals, numBasis, denBasis) -- output is in the form (numerator, denominator)
 -- hence we conclude that the coefficient of dx*dy is
 -- 1/1.666667t, i.e. 6/t.
+
+-- The procedure above is automated in numericalNoetherianOperators
+needsPackage "NumericalAlgebraicGeometry"
+R = CC[t,x,y]
+I = ideal(x^2 - t*y, y^2)
+nv = first components numericalIrreducibleDecomposition(I, Software => BERTINI)
+pts = apply(9, i -> sample(nv))
+numericalNoetherianOperators(I, pts, DependentSet => {x,y})
