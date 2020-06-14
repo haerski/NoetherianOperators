@@ -641,7 +641,7 @@ sanityCheck = (nops, I) -> (
 )
 
 -- TODO degree lmit not needed
-noetherianOperators = method(Options => {DegreeLimit => 20, DependentSet => null}) 
+noetherianOperators = method(Options => {DegreeLimit => 10, DependentSet => null}) 
 noetherianOperators (Ideal, Ideal) := List => opts -> (I, P) -> (
     R := ring I;
     depVars := if opts.DependentSet === null then gens R - set support first independentSets P
@@ -705,8 +705,8 @@ numericalNoetherianOperators = method(Options => {
     --DenBasis => null,
     --InterpolationBasis => null,
     --InterpolationDegreeLimit => 2,
-    --NoetherianDegreeLimit => 5,
-    Saturate => false,
+    NoetherianDegreeLimit => 5,
+    Saturate => true,
     DependentSet => null})
 -- TODO: does not always work, reuires some manual intervention
 numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
