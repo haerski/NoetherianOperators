@@ -820,7 +820,7 @@ rationalInterpolation(List, List, Matrix) := (RingElement, RingElement) => opts 
 rationalInterpolation(List,List,Ring) := opts -> (pts, vals,R) -> (
     d := 0;
     local i; local b;
-    while (try (print d; b = basis(0,d,R); i = rationalInterpolation(pts, vals, b, opts)) then false else true) do (
+    while (try (print d; b = basis(0,d,R); i = rationalInterpolation(take(pts, 2*numColumns b + 2), take(vals, 2*numColumns b + 2), b, opts)) then false else true) do (
         if #pts <= 2*numColumns b then (print ("At least " | toString(2*numColumns b + 1) | " points needed"); error"No fitting rational function found; more points needed");
         d = d+1;
     );
