@@ -671,7 +671,7 @@ approxKer(Matrix) := Matrix => o -> A -> (
 )
 
 
-numNoethOpsAtPoint = method(Options => options noetherianOperators ++ options approxKer ++ {DSupport => null})
+numNoethOpsAtPoint = method(Options => options noetherianOperators ++ options approxKer)
 numNoethOpsAtPoint (Ideal, Point) := List => opts -> (I, p) -> numNoethOpsAtPoint(I, matrix p, opts)
 numNoethOpsAtPoint (Ideal, Matrix) := List => opts -> (I, p) -> (
     tol := if opts.Tolerance === null then defaultT(ring I) else opts.Tolerance;
@@ -682,15 +682,12 @@ numNoethOpsAtPoint (Ideal, Matrix) := List => opts -> (I, p) -> (
     local M; local M'; local K; local bd; local bx;
     numOps := -1;
     for i in 1..opts.DegreeLimit do (
-        bx = if opts.DSupport === null then 
-                flatten entries basis(0,i - 1,R, Variables => gens R)
-            else
-                flatten entries basis(0,(flatten entries opts.DSupport / degree // flatten // max) - 1,R, Variables => gens R);
-        bd = if opts.DSupport === null then basis(0,i,R, Variables => var) else opts.DSupport;
+        bx = flatten entries basis(0,i - 1,R, Variables => gens R);
+        bd = basis(0,i,R, Variables => var);
         M = diff(bd, transpose matrix {flatten (table(bx,I_*,(i,j) -> i*j))});
         M' = sub(M,p);
         K = numericalKernel (M', tol);
-        if numColumns K == numOps or opts.DSupport =!= null then break;
+        if numColumns K == numOps then break;
         numOps = numColumns K;
     );
     K = colReduce(K, tol);
