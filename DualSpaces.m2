@@ -741,7 +741,7 @@ interpolateNOp(List,List,Boolean,Ring) := List => opts -> (specializedNops, pts,
     coeffs = coeffs / (i -> i / (j -> sub(j, CC)));
     interpolatedCoefficients := coeffs / (i -> 
         try rationalInterpolation(pts, i, R, Saturate => sat, Tolerance => opts.Tolerance) / (j -> j_(0,0))
-        else {"fail","fail"});
+        else {"?","?"});
     apply(interpolatedCoefficients, mons, (i,j) -> (i,j))
 )
 
