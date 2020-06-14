@@ -1,4 +1,3 @@
-restart
 -- Example 2.2
 needsPackage "DualSpaces"
 R = QQ[x,y]
@@ -43,8 +42,12 @@ rationalInterpolation(ts, vals, numBasis, denBasis) -- output is in the form (nu
 
 -- The procedure above is automated in numericalNoetherianOperators
 needsPackage "NumericalAlgebraicGeometry"
+needsPackage "Bertini"
 R = CC[t,x,y]
 I = ideal(x^2 - t*y, y^2)
 nv = first components numericalIrreducibleDecomposition(I, Software => BERTINI)
 pts = apply(9, i -> sample(nv))
 numericalNoetherianOperators(I, pts, DependentSet => {x,y})
+
+
+-- Example 4.4 is in the file ex44.m2
