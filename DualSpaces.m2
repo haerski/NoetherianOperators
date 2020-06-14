@@ -740,7 +740,9 @@ interpolateNOp(List,List,Boolean,Ring) := List => opts -> (specializedNops, pts,
     coeffs := transpose (specializedNops / (i -> (coefficients i)#1) / entries / flatten);
     coeffs = coeffs / (i -> i / (j -> sub(j, CC)));
     interpolatedCoefficients := coeffs / (i -> 
-        try rationalInterpolation(pts, i, R, Saturate => sat, Tolerance => opts.Tolerance) / (j -> j_(0,0))
+        try rationalInterpolation(pts, i, R, Saturate => sat, Tolerance => opts.Tolerance) / 
+            (j -> j_(0,0)) // 
+            (fg -> (fg#0/leadCoefficient fg#0, fg#1/leadCoefficient fg#0))
         else {"?","?"});
     apply(interpolatedCoefficients, mons, (i,j) -> (i,j))
 )
