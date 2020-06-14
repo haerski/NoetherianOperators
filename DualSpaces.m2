@@ -608,7 +608,7 @@ basisIndices = (M, tol) -> (
 --
 -----  Noetherian operator code
 --
-memoRing = memoize( (R,diffVars) -> R[diffVars])
+memoRing = memoize( (R,diffVars) -> R(monoid[diffVars]))
 diffAlg = method()
 diffAlg(Ring) := R -> (
     diffVars := apply(gens R, i -> value("symbol d" | toString(i)) );
@@ -616,7 +616,7 @@ diffAlg(Ring) := R -> (
 )
 diffAlg(Ideal,Ring) := (P,R) -> (
     diffVars := apply(gens R, i -> value("symbol d" | toString(i)) );
-    R/P[diffVars]
+    (R/P)(monoid[diffVars])
 )
 
 -- Given an element N in Weyl algebra and a polynomial
