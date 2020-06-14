@@ -718,7 +718,8 @@ numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
     R := CC monoid S;
     J := sub(I,R);
 
-    noethOpsAtPoints := pts / (p -> numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol));
+    idx := 0;
+    noethOpsAtPoints := pts / (p -> (<<(idx=idx+1)<<"/"<<#pts<<endl; numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => opts.NoetherianDegreeLimit)));
     -- remove bad points, i.e. points where the noetherian operators look different than the majority
     monLists := noethOpsAtPoints / (i -> i/monomials);
     most := commonest tally monLists;
