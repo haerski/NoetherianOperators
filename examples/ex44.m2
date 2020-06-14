@@ -12,6 +12,8 @@ nvb = elapsedTime numericalIrreducibleDecomposition (I, Software => BERTINI)
 -- choose the component that is P primary
 membershipTest = components nvb / (w->clean(1e-6, evaluate(gens P, w#Points#0))) / norm
 ws = (components nvb)#(minPosition membershipTest)
--- sample points on this component
-pts = bertiniSample(60, ws);
-numericalNoetherianOperators(I,pts, DependentSet => {x_1,x_3,x_4})
+-- sample 200 points on this component
+pts = bertiniSample(200, ws);
+-- Some coefficients will not be properly interpolated, they will output a ?
+-- This means that more points are necessary
+numericalNoetherianOperators(I,pts, DependentSet => {x_1,x_3,x_4}, InterpolationTolerance => 1e-6)
