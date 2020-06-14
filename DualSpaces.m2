@@ -54,6 +54,7 @@ export {
      "NumBasis",
      "DenBasis",
      "InterpolationBasis",
+     "InterpolationTolerance",
      "InterpolationDegreeLimit",
      "NoetherianDegreeLimit",
      "Saturate"
@@ -640,7 +641,7 @@ sanityCheck = (nops, I) -> (
 )
 
 -- TODO degree lmit not needed
-noetherianOperators = method(Options => {DegreeLimit => 5, DependentSet => null}) 
+noetherianOperators = method(Options => {DegreeLimit => 20, DependentSet => null}) 
 noetherianOperators (Ideal, Ideal) := List => opts -> (I, P) -> (
     R := ring I;
     depVars := if opts.DependentSet === null then gens R - set support first independentSets P
@@ -699,11 +700,12 @@ numNoethOpsAtPoint (Ideal, Matrix) := List => opts -> (I, p) -> (
 
 numericalNoetherianOperators = method(Options => {
     Tolerance => 1e-6,
-    NumBasis => null,
-    DenBasis => null,
-    InterpolationBasis => null,
-    InterpolationDegreeLimit => 2,
-    NoetherianDegreeLimit => 5,
+    InterpolationTolerance => 1e-6,
+    --NumBasis => null,
+    --DenBasis => null,
+    --InterpolationBasis => null,
+    --InterpolationDegreeLimit => 2,
+    --NoetherianDegreeLimit => 5,
     Saturate => false,
     DependentSet => null})
 -- TODO: does not always work, reuires some manual intervention
@@ -716,13 +718,16 @@ numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
     R := CC monoid S;
     J := sub(I,R);
 
-    firstNoethOps := numNoethOpsAtPoint(J, pts#0, DegreeLimit => opts.NoetherianDegreeLimit, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol);
-    dSup := firstNoethOps / monomials / entries // flatten @@ flatten;
-    DR := ring first dSup;
-    proj := map(R,DR, vars R | vars R);
-    noethOpsAtPoints := pts / (p -> numNoethOpsAtPoint(J, p, DSupport => matrix{dSup / proj}, DependentSet => depSet / (i -> sub(i,R))), Tolerance => tol);
-    if not same (noethOpsAtPoints / (i -> i / monomials)) then error "Support of Noetherian operators don't agree";
-    transpose noethOpsAtPoints / (L -> formatNoethOps interpolateNOp(L, pts, opts.Saturate, R))
+    noethOpsAtPoints := pts / (p -> numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol));
+    -- remove bad points, i.e. points where the noetherian operators look different than the majority
+    monLists := noethOpsAtPoints / (i -> i/monomials);
+    most := commonest tally monLists;
+    goodIdx := positions(noethOpsAtPoints, i -> (i / monomials) == most#0);
+    <<"Num good points: " << #goodIdx << " / " << #noethOpsAtPoints << endl;
+    goodNops := noethOpsAtPoints_goodIdx;
+    goodPts := pts_goodIdx;
+    transpose goodNops / (L -> formatNoethOps interpolateNOp(L, goodPts, opts.Saturate, R, Tolerance => opts.InterpolationTolerance))
+
 )
 
 formatNoethOps = xs -> fold(plus,
@@ -734,11 +739,9 @@ interpolateNOp(List,List,Boolean,Ring) := List => opts -> (specializedNops, pts,
     mons := flatten entries monomials specializedNops#0;
     coeffs := transpose (specializedNops / (i -> (coefficients i)#1) / entries / flatten);
     coeffs = coeffs / (i -> i / (j -> sub(j, CC)));
-    interpolatedCoefficients := coeffs / (i -> rationalInterpolation(pts, i, R, Saturate => sat, Tolerance => opts.Tolerance));
-    --print interpolatedCoefficients;
-    --sleep 8;
-    -- pick the first one
-    interpolatedCoefficients = interpolatedCoefficients / (i -> i / (j -> j_(0,0)));
+    interpolatedCoefficients := coeffs / (i -> 
+        try rationalInterpolation(pts, i, R, Saturate => sat, Tolerance => opts.Tolerance) / (j -> j_(0,0))
+        else {"fail","fail"});
     apply(interpolatedCoefficients, mons, (i,j) -> (i,j))
 )
 
@@ -818,7 +821,7 @@ rationalInterpolation(List,List,Ring) := opts -> (pts, vals,R) -> (
     d := 0;
     local i; local b;
     while (try (print d; b = basis(0,d,R); i = rationalInterpolation(pts, vals, b, opts)) then false else true) do (
-        if #pts <= 2*numColumns b then error ("At least " | toString(2*numColumns b + 1) | " points needed");
+        if #pts <= 2*numColumns b then (print ("At least " | toString(2*numColumns b + 1) | " points needed"); error"No fitting rational function found; more points needed");
         d = d+1;
     );
     i
