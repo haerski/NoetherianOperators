@@ -9,4 +9,6 @@ The function `noetherianOperators(I,P)` computes a set of Noetherian operators f
 
 To compute specialized Noetherian operators at a point p numerically, use `numNoethOpsAtPoint(I,p)`. The output is a set of specialized Noetherian operators for the primary ideal corresponding to the irreducible component containing p.
 
+The function `numericalNoetherianOperators(I,pts,DependentSet => {...})` numerically computes Noetherian operators for the primary component of `I` containing the points in `pts`. At the moment, the option `DependentSet` is mandatory.
+
 Rational function interpolation is implemented in `rationalInterpolation(pts,vals, numBasis, denBasis)`, where `pts` is a list of points, `vals` is a list of values of the rational function at each point, and `numBasis`,`denBasis` are the monomial ansatzes for the numerators and denominator respectively.
