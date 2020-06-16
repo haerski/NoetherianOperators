@@ -806,7 +806,7 @@ rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasi
     if opts.Saturate == true then (
         M = M || (matrix{{nn:0}} | M^{1}_{nn..nn+nd-1});
         b := transpose matrix{{#pts:0_(coefficientRing R)}} || matrix{{1}};
-        K = clean(opts.Tolerance, solve(M,b, ClosestFit => true, Precision => ceiling (opts.Tolerance*log 10/log 2)));
+        K = clean(opts.Tolerance, solve(M,b, ClosestFit => true, Precision => ceiling (-log(opts.Tolerance)/log(2))));
         if norm(M * K - b) > opts.Tolerance then error "No fitting rational function found";
         K = sub(K, ring numBasis);
     ) else (
