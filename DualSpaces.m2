@@ -733,7 +733,15 @@ numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
 
 formatNoethOps = xs -> fold(plus,
     expression 0,
-    apply(xs, x -> (expression x#0#0) / (expression x#0#1) * x#1))
+    apply(xs, x -> (expression x#0#0) / (expression x#0#1) * x#1)
+)
+
+cleanComplex = (tol, x) -> clean(tol,realPart x) + ii*clean(tol, imaginaryPart x)
+cleanPoly = (tol, x) -> (
+    (mon,coef) := coefficients x;
+    coef = matrix applyTable(entries coef, f -> cleanComplex(tol,sub(f,CC)));
+    (mon * coef)_(0,0)
+)
 
 interpolateNOp = method(Options => {Tolerance => 1e-6})
 interpolateNOp(List,List,Boolean,Ring) := List => opts -> (specializedNops, pts, sat, R) -> (
@@ -742,8 +750,8 @@ interpolateNOp(List,List,Boolean,Ring) := List => opts -> (specializedNops, pts,
     coeffs = coeffs / (i -> i / (j -> sub(j, CC)));
     interpolatedCoefficients := coeffs / (i -> 
         try rationalInterpolation(pts, i, R, Saturate => sat, Tolerance => opts.Tolerance) / 
-            (j -> j_(0,0)) // 
-            (fg -> (fg#0/leadCoefficient fg#0, fg#1/leadCoefficient fg#0))
+            (j -> (matrix j)_(0,0)) / (j -> cleanPoly(opts.Tolerance, j))--// 
+            --(fg -> (fg#0/leadCoefficient fg#0, fg#1/leadCoefficient fg#0))
         else {"?","?"});
     apply(interpolatedCoefficients, mons, (i,j) -> (i,j))
 )
