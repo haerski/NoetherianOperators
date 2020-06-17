@@ -804,24 +804,33 @@ noethOpsFromComponents(HashTable) := List => H -> (
 -- Outputs a sequence (numerator, denominator)
 rationalInterpolation = method(Options => {Tolerance => 1e-6, Saturate => false})
 rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasis, denBasis) -> (
-    if numColumns numBasis + numColumns denBasis > #pts then error "Rational interpolation needs more points";
+    if numColumns numBasis + numColumns denBasis > #pts + 1 then error "Rational interpolation needs more points";
     R := ring numBasis_(0,0);
     nn := numColumns numBasis;
     nd := numColumns denBasis;
+    testPt := pts#0;
+    pts = drop(pts,1);
+    vals = drop(vals, 1);
     M := apply(pts, vals, (pt,val) -> evaluate(numBasis, pt) | -val * evaluate(denBasis, pt));
     M = fold(M, (i,j) -> i || j);
     local K;
     if opts.Saturate == true then (
-        M = M || (matrix{{nn:0}} | M^{1}_{nn..nn+nd-1});
+        M = M || (matrix{{nn:0}} | evaluate(denBasis, testPt));
         b := transpose matrix{{#pts:0_(coefficientRing R)}} || matrix{{1}};
         K = clean(opts.Tolerance, solve(M,b, ClosestFit => true, Precision => ceiling (-log(opts.Tolerance)/log(2))));
         if norm(M * K - b) > opts.Tolerance then error "No fitting rational function found";
         K = sub(K, ring numBasis);
     ) else (
-        ker := clean(opts.Tolerance, approxKer(M, Tolerance => opts.Tolerance));
-        if numColumns ker == 0 then error "No fitting rational function found";
-        -- Normalize
+        --ker := clean(opts.Tolerance, approxKer(M, Tolerance => opts.Tolerance));
+        ker := approxKer(M, Tolerance => opts.Tolerance);
         K = colReduce(ker, opts.Tolerance);
+        --remove bad columns using testPt
+        idx := positions(0..<numColumns K, i -> 
+                (norm(evaluate(matrix (numBasis * K^{0..(nn-1)}_i), testPt)) > opts.Tolerance) and (norm(evaluate(matrix (denBasis * K^{nn..(nn+nd-1)}_i), testPt)) > opts.Tolerance)
+            );
+        if idx === {} then error "No fitting rational function found";
+        minNorm := minPosition(apply(idx, i -> norm(K_i)));
+        K = K_(idx#minNorm);
     );
     ((numBasis * K^{0..(nn - 1)}), (denBasis * K^{nn .. (nn+nd-1)}))
 )
@@ -831,8 +840,9 @@ rationalInterpolation(List, List, Matrix) := (RingElement, RingElement) => opts 
 rationalInterpolation(List,List,Ring) := opts -> (pts, vals,R) -> (
     d := 0;
     local i; local b;
-    while (try (print d; b = basis(0,d,R); i = rationalInterpolation(take(pts, 2*numColumns b + 2), take(vals, 2*numColumns b + 2), b, opts)) then false else true) do (
-        if #pts <= 2*numColumns b then (print ("At least " | toString(2*numColumns b + 1) | " points needed"); error"No fitting rational function found; more points needed");
+    --while (try (print d; b = basis(0,d,R); i = rationalInterpolation(take(pts, 2*numColumns b + 1), take(vals, 2*numColumns b + 1), b, opts)) then false else true) do (
+    while (try (print d; b = basis(0,d,R); i = rationalInterpolation(pts, vals, b, opts)) then false else true) do (
+        if #pts < 2*numColumns b + 1 then (print ("At least " | toString(2*numColumns b + 1) | " points needed"); error"No fitting rational function found; more points needed");
         d = d+1;
     );
     i
