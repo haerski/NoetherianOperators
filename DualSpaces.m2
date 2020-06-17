@@ -686,7 +686,7 @@ numNoethOpsAtPoint (Ideal, Matrix) := List => opts -> (I, p) -> (
         bx = flatten entries basis(0,i - 1,R, Variables => gens R);
         bd = basis(0,i,R, Variables => var);
         M = diff(bd, transpose matrix {flatten (table(bx,I_*,(i,j) -> i*j))});
-        M' = sub(M,p);
+        M' = evaluate(M,p);
         K = numericalKernel (M', tol);
         if numColumns K == numOps then break;
         numOps = numColumns K;
@@ -811,8 +811,8 @@ rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasi
     testPt := pts#0;
     pts = drop(pts,1);
     vals = drop(vals, 1);
-    M := apply(pts, vals, (pt,val) -> evaluate(numBasis, pt) | -val * evaluate(denBasis, pt));
-    M = fold(M, (i,j) -> i || j);
+    M := apply(pts, vals, (pt,val) -> flatten entries(evaluate(numBasis, pt) | -val * evaluate(denBasis, pt)));
+    M = matrix M;
     local K;
     if opts.Saturate == true then (
         M = M || (matrix{{nn:0}} | evaluate(denBasis, testPt));
