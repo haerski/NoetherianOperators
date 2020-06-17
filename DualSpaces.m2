@@ -706,7 +706,7 @@ numericalNoetherianOperators = method(Options => {
     --InterpolationBasis => null,
     --InterpolationDegreeLimit => 2,
     NoetherianDegreeLimit => 5,
-    Saturate => true,
+    Saturate => false,
     DependentSet => null})
 -- TODO: does not always work, reuires some manual intervention
 numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
