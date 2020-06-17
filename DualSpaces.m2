@@ -829,8 +829,10 @@ rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasi
                 (norm(evaluate(matrix (numBasis * K^{0..(nn-1)}_i), testPt)) > opts.Tolerance) and (norm(evaluate(matrix (denBasis * K^{nn..(nn+nd-1)}_i), testPt)) > opts.Tolerance)
             );
         if idx === {} then error "No fitting rational function found";
-        minNorm := minPosition(apply(idx, i -> norm(K_i)));
-        K = K_(idx#minNorm);
+        norms := apply(idx, i -> norm(K_i));
+        minNorm := min(norms);
+        minPos := position(norms, i -> abs(i - minNorm) < opts.Tolerance);
+        K = K_(idx#minPos);
     );
     ((numBasis * K^{0..(nn - 1)}), (denBasis * K^{nn .. (nn+nd-1)}))
 )
@@ -841,7 +843,7 @@ rationalInterpolation(List,List,Ring) := opts -> (pts, vals,R) -> (
     d := 0;
     local i; local b;
     --while (try (print d; b = basis(0,d,R); i = rationalInterpolation(take(pts, 2*numColumns b + 1), take(vals, 2*numColumns b + 1), b, opts)) then false else true) do (
-    while (try (print d; b = basis(0,d,R); i = rationalInterpolation(pts, vals, b, opts)) then false else true) do (
+    while (try (print d; b = sort basis(0,d,R); i = rationalInterpolation(pts, vals, b, opts)) then false else true) do (
         if #pts < 2*numColumns b + 1 then (print ("At least " | toString(2*numColumns b + 1) | " points needed"); error"No fitting rational function found; more points needed");
         d = d+1;
     );
