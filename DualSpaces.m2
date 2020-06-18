@@ -815,6 +815,7 @@ rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasi
     M = matrix M;
     local K;
     if opts.Saturate == true then (
+        -- TODO: this is broken now, remove or fix
         M = M || (matrix{{nn:0}} | evaluate(denBasis, testPt));
         b := transpose matrix{{#pts:0_(coefficientRing R)}} || matrix{{1}};
         K = clean(opts.Tolerance, solve(M,b, ClosestFit => true, Precision => ceiling (-log(opts.Tolerance)/log(2))));
@@ -822,17 +823,20 @@ rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasi
         K = sub(K, ring numBasis);
     ) else (
         --ker := clean(opts.Tolerance, approxKer(M, Tolerance => opts.Tolerance));
+        M = mingleMatrix(M, nn, nd);
         ker := approxKer(M, Tolerance => opts.Tolerance);
         K = colReduce(ker, opts.Tolerance);
         --remove bad columns using testPt
+        numIdx := select(toList(0..<nn+nd), even);
+        denIdx := select(toList(0..<nn+nd), odd);
         idx := positions(0..<numColumns K, i -> 
-                (norm(evaluate(matrix (numBasis * K^{0..(nn-1)}_i), testPt)) > opts.Tolerance) and (norm(evaluate(matrix (denBasis * K^{nn..(nn+nd-1)}_i), testPt)) > opts.Tolerance)
+                (norm(evaluate(matrix (numBasis * K^numIdx_i), testPt)) > opts.Tolerance) and (norm(evaluate(matrix (denBasis * K^denIdx_i), testPt)) > opts.Tolerance)
             );
         if idx === {} then error "No fitting rational function found";
         norms := apply(idx, i -> norm(K_i));
         minNorm := min(norms);
         minPos := position(norms, i -> abs(i - minNorm) < opts.Tolerance);
-        K = K_(idx#minPos);
+        K = unmingleVector(K_(idx#minPos), nn, nd);
     );
     ((numBasis * K^{0..(nn - 1)}), (denBasis * K^{nn .. (nn+nd-1)}))
 )
@@ -848,6 +852,16 @@ rationalInterpolation(List,List,Ring) := opts -> (pts, vals,R) -> (
         d = d+1;
     );
     i
+)
+
+mingleMatrix = (M, nn, nd) -> (
+    entries M / (r -> mingle(r_{0..<nn}, r_{nn..<(nn+nd)})) // matrix
+)
+
+unmingleVector = (V, nn, nd) -> (
+    l := flatten entries V;
+    ht := partition(odd, toList(0..<nn+nd));
+    transpose matrix{l_(ht#false) | l_(ht#true)}
 )
 
 

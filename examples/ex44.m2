@@ -14,9 +14,8 @@ membershipTest = components nvb / (w->clean(1e-6, evaluate(gens P, w#Points#0)))
 ws = (components nvb)#(minPosition membershipTest)
 -- sample 200 points on this component
 pts = bertiniSample(500, ws);
--- Some coefficients will not be properly interpolated, they will output a ?
--- This means that more points are necessary
-numericalNoetherianOperators(I,take(pts,2), DependentSet => {x_1,x_3,x_4}, InterpolationTolerance => 1e-10, Saturate => false)
+numericalNoetherianOperators(I,pts, DependentSet => {x_1,x_3,x_4}, InterpolationTolerance => 1e-3, Tolerance => 1e-6, Saturate => false, NoetherianDegreeLimit => 3)
+
 
 idx := 0;
 noethOpsAtPoints = pts / (p -> (<<(idx=idx+1)<<"/"<<#pts<<endl; numNoethOpsAtPoint(I, p, DependentSet => {x_1, x_3, x_4}, DegreeLimit => 5)));
