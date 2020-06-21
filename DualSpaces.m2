@@ -864,7 +864,7 @@ rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasi
                 (norm(evaluate(matrix (numBasis * K^numIdx_i), testPt)) > opts.Tolerance) and (norm(evaluate(matrix (denBasis * K^denIdx_i), testPt)) > opts.Tolerance)
             );
         if idx === {} then error "No fitting rational function found";
-        norms := apply(idx, i -> norm(K_i));
+        norms := apply(idx, i -> entries K_i / abs // sum);
         minNorm := min(norms);
         minPos := position(norms, i -> abs(i - minNorm) < opts.Tolerance);
         K = unmingleVector(K_(idx#minPos), nn, nd);
