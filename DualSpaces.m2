@@ -572,7 +572,7 @@ colReduce (Matrix, Number) := (M, tol) -> (
 	if i == m then break;
 	a := i + maxPosition apply(i..m-1, l->(abs M_(l,j)));
 	c := M_(a,j);
-	if abs c <= tol then continue;
+	if abs c <= tol then (for k from i to m-1 do M_(k,j) = 0; continue);
 	rowSwap(M,a,i);
 	for l from 0 to n-1 do M_(i,l) = M_(i,l)/c; --rowMult(M,i,1/c); is bugged
 	for k from 0 to m-1 do rowAdd(M,k,-M_(k,j),i);
