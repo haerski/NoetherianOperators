@@ -730,6 +730,37 @@ numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
     transpose goodNops / (L -> formatNoethOps interpolateNOp(L, goodPts, opts.Saturate, R, Tolerance => opts.InterpolationTolerance))
 
 )
+-- compute the jth term of the ith Noetherian operator
+numericalNoetherianOperators(Ideal, List, ZZ, ZZ) := List => opts -> (I, pts, i, j) -> (
+    tol := opts.Tolerance;
+    S := ring I;
+    depSet := if opts.DependentSet === null then error"Expected dependent set"
+            else opts.DependentSet;
+    indSet := gens S - set depSet;
+    R := CC monoid S;
+    J := sub(I,R);
+
+    idx := 0;
+    noethOpsAtPoints := pts / (p -> (<<(idx=idx+1)<<"/"<<#pts<<endl; numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => opts.NoetherianDegreeLimit)));
+    -- remove bad points, i.e. points where the noetherian operators look different than the majority
+    monLists := noethOpsAtPoints / (i -> i/monomials);
+    most := commonest tally monLists;
+    goodIdx := positions(noethOpsAtPoints, i -> (i / monomials) == most#0);
+    <<"Num good points: " << #goodIdx << " / " << #noethOpsAtPoints << endl;
+    goodNops := noethOpsAtPoints_goodIdx;
+    goodPts := pts_goodIdx;
+    L := (transpose goodNops)#i;
+    mons := flatten entries monomials L#0;
+    coeffs := transpose (L / (i -> (coefficients i)#1) / entries / flatten);
+    coeffs = {coeffs#j};
+    coeffs = coeffs / (i -> i / (j -> sub(j, CC)));
+    interpolatedCoefficients := coeffs / (i -> 
+        try rationalInterpolation(goodPts, i, R, Saturate => opts.Saturate, Tolerance => opts.InterpolationTolerance) / 
+            (j -> (matrix j)_(0,0)) / (j -> cleanPoly(opts.Tolerance, j))--// 
+            --(fg -> (fg#0/leadCoefficient fg#0, fg#1/leadCoefficient fg#0))
+        else {"?","?"});
+    formatNoethOps apply(interpolatedCoefficients, {mons#j}, (i,j) -> (i,j))
+)
 
 formatNoethOps = xs -> fold(plus,
     expression 0,
