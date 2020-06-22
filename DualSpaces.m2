@@ -853,7 +853,6 @@ rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasi
         if norm(M * K - b) > opts.Tolerance then error "No fitting rational function found";
         K = sub(K, ring numBasis);
     ) else (
-        --ker := clean(opts.Tolerance, approxKer(M, Tolerance => opts.Tolerance));
         M = mingleMatrix(M, nn, nd);
         ker := approxKer(M, Tolerance => opts.Tolerance);
         K = colReduce(ker, opts.Tolerance);
@@ -877,8 +876,7 @@ rationalInterpolation(List, List, Matrix) := (RingElement, RingElement) => opts 
 rationalInterpolation(List,List,Ring) := opts -> (pts, vals,R) -> (
     d := 0;
     local i; local b;
-    --while (try (print d; b = basis(0,d,R); i = rationalInterpolation(take(pts, 2*numColumns b + 1), take(vals, 2*numColumns b + 1), b, opts)) then false else true) do (
-    while (try (print d; b = sort basis(0,d,R); i = rationalInterpolation(pts, vals, b, opts)) then false else true) do (
+    while (try (print d; b = rsort basis(0,d,R); i = rationalInterpolation(pts, vals, b, opts)) then false else true) do (
         if #pts < 2*numColumns b + 1 then (print ("At least " | toString(2*numColumns b + 1) | " points needed"); error"No fitting rational function found; more points needed");
         d = d+1;
     );
