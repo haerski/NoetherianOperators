@@ -32,8 +32,8 @@ elapsedTime nid = bertiniPosDimSolve(J', BertiniInputConfiguration => {RandomSee
 
 ws = (components nid)#0
 pts = bertiniSample(100, ws, BertiniInputConfiguration => {RandomSeed => 1});
-elapsedTime numericalNoetherianOperators(J', pts, DependentSet => {1, 2, 4, 5, 6} / (i -> S_i), InterpolationTolerance => 1e-12, Saturate => false, NoetherianDegreeLimit => 2)
+elapsedTime numericalNoetherianOperators(J', pts, DependentSet => {1, 2, 4, 5, 6} / (i -> S_i), InterpolationTolerance => 1e-12, NoetherianDegreeLimit => 2)
 
 ws = (components nid)#1
 pts = bertiniSample(20, ws, BertiniInputConfiguration => {RandomSeed => 1});
-elapsedTime numericalNoetherianOperators(J', pts, DependentSet => {0, 1, 2, 3, 4} / (i -> S_i), InterpolationTolerance => 1e-6, Saturate => false, NoetherianDegreeLimit => 3)
+elapsedTime numericalNoetherianOperators(J', pts, DependentSet => {0, 1, 2, 3, 4} / (i -> S_i), InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 3)
