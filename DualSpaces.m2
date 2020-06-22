@@ -572,7 +572,7 @@ colReduce (Matrix, Number) := (M, tol) -> (
 	if i == m then break;
 	a := i + maxPosition apply(i..m-1, l->(abs M_(l,j)));
 	c := M_(a,j);
-	if abs c <= tol then continue;
+	if abs c <= tol then (for k from i to m-1 do M_(k,j) = 0; continue);
 	rowSwap(M,a,i);
 	for l from 0 to n-1 do M_(i,l) = M_(i,l)/c; --rowMult(M,i,1/c); is bugged
 	for k from 0 to m-1 do rowAdd(M,k,-M_(k,j),i);
@@ -686,7 +686,7 @@ numNoethOpsAtPoint (Ideal, Matrix) := List => opts -> (I, p) -> (
         bx = flatten entries basis(0,i - 1,R, Variables => gens R);
         bd = basis(0,i,R, Variables => var);
         M = diff(bd, transpose matrix {flatten (table(bx,I_*,(i,j) -> i*j))});
-        M' = sub(M,p);
+        M' = evaluate(M,p);
         K = numericalKernel (M', tol);
         if numColumns K == numOps then break;
         numOps = numColumns K;
@@ -706,7 +706,7 @@ numericalNoetherianOperators = method(Options => {
     --InterpolationBasis => null,
     --InterpolationDegreeLimit => 2,
     NoetherianDegreeLimit => 5,
-    Saturate => true,
+    Saturate => false,
     DependentSet => null})
 -- TODO: does not always work, reuires some manual intervention
 numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
@@ -730,10 +730,49 @@ numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
     transpose goodNops / (L -> formatNoethOps interpolateNOp(L, goodPts, opts.Saturate, R, Tolerance => opts.InterpolationTolerance))
 
 )
+-- compute the jth term of the ith Noetherian operator
+numericalNoetherianOperators(Ideal, List, ZZ, ZZ) := List => opts -> (I, pts, i, j) -> (
+    tol := opts.Tolerance;
+    S := ring I;
+    depSet := if opts.DependentSet === null then error"Expected dependent set"
+            else opts.DependentSet;
+    indSet := gens S - set depSet;
+    R := CC monoid S;
+    J := sub(I,R);
+
+    idx := 0;
+    noethOpsAtPoints := pts / (p -> (<<(idx=idx+1)<<"/"<<#pts<<endl; numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => opts.NoetherianDegreeLimit)));
+    -- remove bad points, i.e. points where the noetherian operators look different than the majority
+    monLists := noethOpsAtPoints / (i -> i/monomials);
+    most := commonest tally monLists;
+    goodIdx := positions(noethOpsAtPoints, i -> (i / monomials) == most#0);
+    <<"Num good points: " << #goodIdx << " / " << #noethOpsAtPoints << endl;
+    goodNops := noethOpsAtPoints_goodIdx;
+    goodPts := pts_goodIdx;
+    L := (transpose goodNops)#i;
+    mons := flatten entries monomials L#0;
+    coeffs := transpose (L / (i -> (coefficients i)#1) / entries / flatten);
+    coeffs = {coeffs#j};
+    coeffs = coeffs / (i -> i / (j -> sub(j, CC)));
+    interpolatedCoefficients := coeffs / (i -> 
+        try rationalInterpolation(goodPts, i, R, Saturate => opts.Saturate, Tolerance => opts.InterpolationTolerance) / 
+            (j -> (matrix j)_(0,0)) / (j -> cleanPoly(opts.Tolerance, j))--// 
+            --(fg -> (fg#0/leadCoefficient fg#0, fg#1/leadCoefficient fg#0))
+        else {"?","?"});
+    formatNoethOps apply(interpolatedCoefficients, {mons#j}, (i,j) -> (i,j))
+)
 
 formatNoethOps = xs -> fold(plus,
     expression 0,
-    apply(xs, x -> (expression x#0#0) / (expression x#0#1) * x#1))
+    apply(xs, x -> (expression x#0#0) / (expression x#0#1) * x#1)
+)
+
+cleanComplex = (tol, x) -> clean(tol,realPart x) + ii*clean(tol, imaginaryPart x)
+cleanPoly = (tol, x) -> (
+    (mon,coef) := coefficients x;
+    coef = matrix applyTable(entries coef, f -> cleanComplex(tol,sub(f,CC)));
+    (mon * coef)_(0,0)
+)
 
 interpolateNOp = method(Options => {Tolerance => 1e-6})
 interpolateNOp(List,List,Boolean,Ring) := List => opts -> (specializedNops, pts, sat, R) -> (
@@ -742,8 +781,8 @@ interpolateNOp(List,List,Boolean,Ring) := List => opts -> (specializedNops, pts,
     coeffs = coeffs / (i -> i / (j -> sub(j, CC)));
     interpolatedCoefficients := coeffs / (i -> 
         try rationalInterpolation(pts, i, R, Saturate => sat, Tolerance => opts.Tolerance) / 
-            (j -> j_(0,0)) // 
-            (fg -> (fg#0/leadCoefficient fg#0, fg#1/leadCoefficient fg#0))
+            (j -> (matrix j)_(0,0)) / (j -> cleanPoly(opts.Tolerance, j))--// 
+            --(fg -> (fg#0/leadCoefficient fg#0, fg#1/leadCoefficient fg#0))
         else {"?","?"});
     apply(interpolatedCoefficients, mons, (i,j) -> (i,j))
 )
@@ -796,24 +835,38 @@ noethOpsFromComponents(HashTable) := List => H -> (
 -- Outputs a sequence (numerator, denominator)
 rationalInterpolation = method(Options => {Tolerance => 1e-6, Saturate => false})
 rationalInterpolation(List, List, Matrix, Matrix) := opts -> (pts, vals, numBasis, denBasis) -> (
-    if numColumns numBasis + numColumns denBasis > #pts then error "Rational interpolation needs more points";
+    if numColumns numBasis + numColumns denBasis > #pts + 1 then error "Rational interpolation needs more points";
     R := ring numBasis_(0,0);
     nn := numColumns numBasis;
     nd := numColumns denBasis;
-    M := apply(pts, vals, (pt,val) -> evaluate(numBasis, pt) | -val * evaluate(denBasis, pt));
-    M = fold(M, (i,j) -> i || j);
+    testPt := pts#0;
+    pts = drop(pts,1);
+    vals = drop(vals, 1);
+    M := apply(pts, vals, (pt,val) -> flatten entries(evaluate(numBasis, pt) | -val * evaluate(denBasis, pt)));
+    M = matrix M;
     local K;
     if opts.Saturate == true then (
-        M = M || (matrix{{nn:0}} | M^{1}_{nn..nn+nd-1});
+        -- TODO: this is broken now, remove or fix
+        M = M || (matrix{{nn:0}} | evaluate(denBasis, testPt));
         b := transpose matrix{{#pts:0_(coefficientRing R)}} || matrix{{1}};
         K = clean(opts.Tolerance, solve(M,b, ClosestFit => true, Precision => ceiling (-log(opts.Tolerance)/log(2))));
         if norm(M * K - b) > opts.Tolerance then error "No fitting rational function found";
         K = sub(K, ring numBasis);
     ) else (
-        ker := clean(opts.Tolerance, approxKer(M, Tolerance => opts.Tolerance));
-        if numColumns ker == 0 then error "No fitting rational function found";
-        -- Normalize
+        M = mingleMatrix(M, nn, nd);
+        ker := approxKer(M, Tolerance => opts.Tolerance);
         K = colReduce(ker, opts.Tolerance);
+        --remove bad columns using testPt
+        numIdx := select(toList(0..<nn+nd), even);
+        denIdx := select(toList(0..<nn+nd), odd);
+        idx := positions(0..<numColumns K, i -> 
+                (norm(evaluate(matrix (numBasis * K^numIdx_i), testPt)) > opts.Tolerance) and (norm(evaluate(matrix (denBasis * K^denIdx_i), testPt)) > opts.Tolerance)
+            );
+        if idx === {} then error "No fitting rational function found";
+        norms := apply(idx, i -> entries K_i / abs // sum);
+        minNorm := min(norms);
+        minPos := position(norms, i -> abs(i - minNorm) < opts.Tolerance);
+        K = unmingleVector(K_(idx#minPos), nn, nd);
     );
     ((numBasis * K^{0..(nn - 1)}), (denBasis * K^{nn .. (nn+nd-1)}))
 )
@@ -823,11 +876,21 @@ rationalInterpolation(List, List, Matrix) := (RingElement, RingElement) => opts 
 rationalInterpolation(List,List,Ring) := opts -> (pts, vals,R) -> (
     d := 0;
     local i; local b;
-    while (try (print d; b = basis(0,d,R); i = rationalInterpolation(take(pts, 2*numColumns b + 2), take(vals, 2*numColumns b + 2), b, opts)) then false else true) do (
-        if #pts <= 2*numColumns b then (print ("At least " | toString(2*numColumns b + 1) | " points needed"); error"No fitting rational function found; more points needed");
+    while (try (print d; b = rsort basis(0,d,R); i = rationalInterpolation(pts, vals, b, opts)) then false else true) do (
+        if #pts < 2*numColumns b + 1 then (print ("At least " | toString(2*numColumns b + 1) | " points needed"); error"No fitting rational function found; more points needed");
         d = d+1;
     );
     i
+)
+
+mingleMatrix = (M, nn, nd) -> (
+    entries M / (r -> mingle(r_{0..<nn}, r_{nn..<(nn+nd)})) // matrix
+)
+
+unmingleVector = (V, nn, nd) -> (
+    l := flatten entries V;
+    ht := partition(odd, toList(0..<nn+nd));
+    transpose matrix{l_(ht#false) | l_(ht#true)}
 )
 
 
