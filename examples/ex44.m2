@@ -11,4 +11,10 @@ f3 = x_2^2*x_3*x_4 - x_1*x_2*x_4^2 + x_4^4 - x_1*x_2*x_3*x_5 + x_1^2*x_4*x_5 - 2
 I = ideal(f1,f2,f3)
 primes = minimalPrimes I
 
-elapsedTime (primes / (P -> noetherianOperators(I,P)))
+elapsedTime (nops = primes / (P -> noetherianOperators(I,P)))
+
+netList nops#0
+netList nops#1
+netList nops#2
+netList nops#3
+netList nops#4

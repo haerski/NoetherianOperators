@@ -28,12 +28,12 @@ I = ideal(x^2 - t*y, y^2)
 noetherianOperators(I, DependentSet => {x,y}) // sort // netList
 
 -- numerical version
-pts = toList(1..4) / (i -> matrix{{i_QQ, 0, 0}})
+pts = toList(1..6) / (i -> matrix{{i_QQ, 0, 0}})
 nops = pts / (p -> numNoethOpsAtPoint(I, p, DependentSet => {x,y}));
 netList nops
 -- interpolating e.g. last coefficient
-vals = {6,3,2,3/2} -- coefficient in _dx*dy
-ts = {matrix{{1}},matrix{{2}},matrix{{3}},matrix{{4}}} -- corresponding value of t
+vals = {6,3,2,3/2, 6/5, 1} -- coefficient in _dx*dy
+ts = {matrix{{1}},matrix{{2}},matrix{{3}},matrix{{4}},matrix{{5}},matrix{{6}}} -- corresponding value of t
 S = RR[t]
 numBasis = denBasis = basis(0,1,S)
 rationalInterpolation(ts, vals, numBasis, denBasis) -- output is in the form (numerator, denominator)
@@ -51,3 +51,4 @@ numericalNoetherianOperators(I, pts, DependentSet => {x,y})
 
 
 -- Example 4.4 is in the file ex44.m2
+-- Example 4.5 is in the file ex45.m2
