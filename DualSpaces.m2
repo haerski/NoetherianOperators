@@ -104,11 +104,12 @@ truncatedDual(Ideal,Matrix,ZZ) := o -> (P,Igens,d) -> (
     polys := gens idealBasis(Igens,d,false);
     M := if o.Normalize then contract(ops,transpose polys) else diff(ops,transpose polys);
     M = sub(M,R/P);
+    if debugLevel >= 1 then  <<"Cols: "<<numColumns M<<", rows: "<<numRows M<<endl;
     kern := if numgens coefficientRing R == 0 and t > 0 then (
     colReduce(numericalKernel(M,t),t)
 	) else (
         K := kernel M;
-        gens gb kernel M
+        gens gb K
     );
     --print(M,gens P,ops,polys,kern);
     dBasis := sub(ops,vars R')*sub(kern,R);
@@ -282,7 +283,7 @@ gCorners (Point,Matrix) := o -> (p,Igens) -> (
 		    ));
 	    finalDegree = max(finalDegree,topLCMdegree);
 	    );
-	<< "-" << "- at degree " << d << ": dim " << dim dBasisReduced << ", new corners " << newGCs/first << endl;
+	if debugLevel >= 1 then << "-" << "- at degree " << d << ": dim " << dim dBasisReduced << ", new corners " << newGCs/first << endl;
 	--print(d, finalDegree, dim dBasisReduced, newGCs/first);
 	d = d+1;
 	);
@@ -640,6 +641,54 @@ sanityCheck = (nops, I) -> (
 )
 
 
+rowReduce = (MM,normalizePivots) -> (
+    M := new MutableMatrix from MM;
+    K := if isField ring M then ring M else toField ring M;
+    (m,n) := (numrows M, numcols M);
+    i := 0; --row of pivot
+    pivs := {};
+    for j from 0 to n-1 do (
+        if debugLevel >= 1 then <<j<<"/"<<n-1<<endl;
+        if i == m then break;
+        b := position(i..m-1, l->M_(l,j) != 0);
+        a := i + if b === null then 0 else b;
+        c := M_(a,j);
+        if c == 0 then continue;
+        pivs = pivs | {j};
+        rowSwap(M,a,i);
+        if normalizePivots then (
+            for l from 0 to n-1 do M_(i,l) = M_(i,l)/c;
+            for k from 0 to m-1 do rowAdd(M,k,-M_(k,j),i);
+        ) else (
+            for k from 0 to m-1 do (
+                if k != i then (
+                    e := M_(k,j);
+                    for l from 0 to n-1 do M_(k,l) = M_(k,l)*c;
+                    rowAdd(M,k,-e,i);
+                )
+            )
+        );
+        i = i+1;
+    );
+    (matrix M, pivs)
+)
+
+myKernel = method()
+myKernel Matrix := Matrix => MM -> (
+    (M,pivs) := rowReduce(MM, true);
+    nonPivs := toList(0..<numColumns M) - set pivs;
+    -transpose matrix (for j in nonPivs list (
+            apply(numColumns M, i -> if member(i,pivs) then (
+                pivRow := position(toList(0..<numRows M), k -> M_(k,i) != 0);
+                M_(pivRow, j) / M_(pivRow, i)
+                )
+                else if i == j then -1_(ring MM) else 0
+            )
+        )
+    )
+)
+
+
 noetherianOperators = method(Options => {DegreeLimit => 10, DependentSet => null}) 
 noetherianOperators (Ideal, Ideal) := List => opts -> (I, P) -> (
     R := ring I;
@@ -649,11 +698,24 @@ noetherianOperators (Ideal, Ideal) := List => opts -> (I, P) -> (
     S := (frac((coefficientRing R)(monoid[indVars])))(monoid[depVars]);
     SradI := sub(P, S);
     SI := sub(I,S);
-    -- S := (S'/II)[depVars];
-    -- S := (frac((coefficientRing R)[indVars]))[depVars];
-    dS := zeroDimensionalDual(SradI,SI,Normalize=>false);
-    flatten entries gens dS
+    kP := toField(S/SradI);
+    local M; local M'; local K; local bd; local bx;
+    numOps := -1;
+    for i in 1..opts.DegreeLimit do (
+        bx = flatten entries sub(basis(0,i - 1,R),S);
+        bd = basis(0,i,S);
+        M = diff(bd, transpose matrix {flatten (table(bx,SI_*,(i,j) -> i*j))});
+        M' = sub(M, kP);
+        K = myKernel (M');
+        if numColumns K == numOps then break;
+        numOps = numColumns K;
+    );
+    K = transpose first rowReduce(transpose K, true);
+    S' := diffAlg S;
+    bdd := sub(bd, vars S');
+    flatten entries (bdd * sub(K, S'))
 )
+
 noetherianOperators (Ideal) := List => opts -> (I) -> noetherianOperators(I, ideal gens radical I, opts)
 noetherianOperators (Ideal, Point) := List => opts -> (I, p) -> (
     P := ideal ((gens ring I) - p.Coordinates);
@@ -716,12 +778,12 @@ numericalNoetherianOperators(Ideal, List) := List => opts -> (I, pts) -> (
     J := sub(I,R);
 
     idx := 0;
-    noethOpsAtPoints := pts / (p -> (<<(idx=idx+1)<<"/"<<#pts<<endl; numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => opts.NoetherianDegreeLimit)));
+    noethOpsAtPoints := pts / (p -> (if debugLevel >= 1 then <<(idx=idx+1)<<"/"<<#pts<<endl; numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => opts.NoetherianDegreeLimit)));
     -- remove bad points, i.e. points where the noetherian operators look different than the majority
     monLists := noethOpsAtPoints / (i -> i/monomials);
     most := commonest tally monLists;
     goodIdx := positions(noethOpsAtPoints, i -> (i / monomials) == most#0);
-    <<"Num good points: " << #goodIdx << " / " << #noethOpsAtPoints << endl;
+    if debugLevel >= 1 then <<"Num good points: " << #goodIdx << " / " << #noethOpsAtPoints << endl;
     goodNops := noethOpsAtPoints_goodIdx;
     goodPts := pts_goodIdx;
     transpose goodNops / (L -> formatNoethOps interpolateNOp(L, goodPts, R, Tolerance => opts.InterpolationTolerance))
@@ -738,12 +800,12 @@ numericalNoetherianOperators(Ideal, List, ZZ, ZZ) := List => opts -> (I, pts, i,
     J := sub(I,R);
 
     idx := 0;
-    noethOpsAtPoints := pts / (p -> (<<(idx=idx+1)<<"/"<<#pts<<endl; numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => opts.NoetherianDegreeLimit)));
+    noethOpsAtPoints := pts / (p -> (if debugLevel >= 1 then <<(idx=idx+1)<<"/"<<#pts<<endl; numNoethOpsAtPoint(J, p, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => opts.NoetherianDegreeLimit)));
     -- remove bad points, i.e. points where the noetherian operators look different than the majority
     monLists := noethOpsAtPoints / (i -> i/monomials);
     most := commonest tally monLists;
     goodIdx := positions(noethOpsAtPoints, i -> (i / monomials) == most#0);
-    <<"Num good points: " << #goodIdx << " / " << #noethOpsAtPoints << endl;
+    if debugLevel >= 1 then <<"Num good points: " << #goodIdx << " / " << #noethOpsAtPoints << endl;
     goodNops := noethOpsAtPoints_goodIdx;
     goodPts := pts_goodIdx;
     L := (transpose goodNops)#i;
