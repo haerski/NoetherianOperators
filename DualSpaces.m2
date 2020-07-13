@@ -42,6 +42,7 @@ export {
      "newGCorners",
 
      "noetherianOperators",
+     "hybridNoetherianOperators",
      "DependentSet",
      "numNoethOpsAtPoint",
      "DSupport",
@@ -740,7 +741,6 @@ numNoethOpsAtPoint (Ideal, Matrix) := List => opts -> (I, p) -> (
     R := ring I;
     var := if opts.DependentSet === null then gens R - set support first independentSets I
             else opts.DependentSet;
-
     local M; local M'; local K; local bd; local bx;
     numOps := -1;
     for i in 1..opts.DegreeLimit do (
@@ -758,6 +758,40 @@ numNoethOpsAtPoint (Ideal, Matrix) := List => opts -> (I, p) -> (
     bdd := sub(bd, vars R');
     flatten entries (bdd * sub(K, R'))
 )
+
+hybridNoetherianOperators = method(Options => options numNoethOpsAtPoint)
+hybridNoetherianOperators (Ideal, Ideal) := List => opts -> (I,P) -> (
+    R := ring I;
+    depVars := if opts.DependentSet === null then gens R - set support first independentSets P
+            else opts.DependentSet;
+    indVars := gens R - set depVars;
+    S := (frac((coefficientRing R)(monoid[indVars])))(monoid[depVars]);
+    S' := diffAlg S;
+    PS := sub(P, S);
+    IS := sub(I,S);
+    kP := toField(S/PS);
+
+    RCC := CC monoid R;
+    ws := first components bertiniPosDimSolve(sub(P,RCC));
+    pt := first bertiniSample(1,ws);
+
+    ops := numNoethOpsAtPoint(sub(I,RCC), pt, opts, DependentSet => depVars / (i->sub(i,RCC)));
+    phi := map(RCC, ring ops#0, vars RCC);
+    sort flatten for op in ops list (
+        bd := monomials phi op;
+        bd = matrix{flatten entries bd / (mon -> S_((first exponents mon)_(depVars / index)))};
+        done := false;
+        d := 0;
+        while not done do (
+            G := transpose basis(0,d,S) ** transpose gens IS;
+            M := sub(diff(bd, G), kP);
+            K := myKernel M;
+            if numColumns K == 1 then done = true else d = d+1;
+        );
+        bdd := sub(bd, vars S');
+        flatten entries (bdd * sub(K // K_(0,0), S'))
+    )
+) 
 
 numericalNoetherianOperators = method(Options => {
     Tolerance => 1e-6,
@@ -1738,8 +1772,22 @@ end
 
 restart
 debug loadPackage("DualSpaces", Reload => true)
-installPackage("DualSpaces", RemakeAllDocumentation => true)
+needsPackage "NumericalAlgebraicGeometry"
+needsPackage "Bertini"
+--installPackage("DualSpaces", RemakeAllDocumentation => true)
 --loadPackage "DualSpaces"
+R = QQ[x_0..x_5]
+P = minors(2,matrix{{x_0,x_1,x_3,x_4},{x_1,x_2,x_4,x_5}});
+f1 = x_1^4 - 2*x_0*x_1^2*x_2 + x_0^2*x_2^2 + x_1*x_2*x_3*x_4 - x_0*x_2*x_4^2 - x_1^2*x_3*x_5 + x_0*x_1*x_4*x_5
+f2 = x_1^4 - 2*x_0*x_1^2*x_2 + x_0^2*x_2^2 + x_1*x_2*x_3*x_4 - x_1^2*x_4^2 - x_0*x_2*x_3*x_5 + x_0*x_1*x_4*x_5
+f3 = x_2^2*x_3*x_4 - x_1*x_2*x_4^2 + x_4^4 - x_1*x_2*x_3*x_5 + x_1^2*x_4*x_5 - 2*x_3*x_4^2*x_5 + x_3^2*x_5^2
+I = ideal(f1,f2,f3)
+primes = minimalPrimes I
+P = primes#0
+
+primes / (P -> elapsedTime hybridNoetherianOperators(I,P))
+
+elapsedTime noetherianOperators(I, primes#0, DegreeLimit=>4)
 
 
 needsPackage "NumericalAlgebraicGeometry"
