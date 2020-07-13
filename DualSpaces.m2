@@ -2,8 +2,8 @@
 newPackage(
      "DualSpaces",
      PackageExports => {"NAGtypes"},
-     Version => "0.3",
-     Date => "Sep 19, 2019",
+     Version => "1.0",
+     Date => "July 12, 2020",
      Authors => {
         {Name => "Robert Krone", 
     	       Email => "krone@math.gatech.edu"},
@@ -15,7 +15,7 @@ newPackage(
                Email => "mwageringel@uos.de"}
      },
      Headline => "numerically compute local dual spaces, Hilbert functions, and Noetherian operators",
-     PackageImports => {"Truncations", "Bertini"},
+     PackageExports => {"Truncations", "Bertini"},
      AuxiliaryFiles => false,
      DebuggingMode => true
 )
