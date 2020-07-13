@@ -7,6 +7,8 @@ Open a Macaulay2 instance in this directory. Load the package by running `needsP
 
 The function `noetherianOperators(I,P)` computes a set of Noetherian operators for the (isolated) P-primary component of I. The function `noetherianOperators I` corresponds to `noetherianOperators(I, radical I)`.
 
+The function `hybridNoetherianOperators(I,P)` symbolically computes a set of Noetherian operators for the (isolated) P-primary component of I by using numerical data as a "template". We see massive performance improvements compared to the purely symbolic `noetherianOperators`.
+
 To compute specialized Noetherian operators at a point p numerically, use `numNoethOpsAtPoint(I,p)`. The output is a set of specialized Noetherian operators for the primary ideal corresponding to the irreducible component containing p.
 
 The function `numericalNoetherianOperators(I,pts,DependentSet => {...})` numerically computes Noetherian operators for the primary component of `I` containing the points in `pts`. At the moment, the option `DependentSet` is mandatory.
