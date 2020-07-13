@@ -774,16 +774,24 @@ hybridNoetherianOperators (Ideal, Ideal) := List => opts -> (I,P) -> (
 
     RCC := CC monoid R;
     ws := first components bertiniPosDimSolve(sub(P,RCC));
-    pt := first bertiniSample(1,ws);
+    pts := bertiniSample(5,ws);
 
-    ops := numNoethOpsAtPoint(sub(I,RCC), pt, opts, DependentSet => depVars / (i->sub(i,RCC)));
-    phi := map(RCC, ring ops#0, vars RCC);
-    sort flatten for op in ops list (
+    noethOpsAtPoints := pts / (pt -> numNoethOpsAtPoint(sub(I,RCC), pt, opts, DependentSet => depVars / (i->sub(i,RCC))));
+    -- remove bad points, i.e. points where the noetherian operators look different than the majority
+    monLists := noethOpsAtPoints / (i -> i/monomials);
+    most := commonest tally monLists;
+    goodIdx := positions(noethOpsAtPoints, i -> (i / monomials) == most#0);
+    if debugLevel >= 1 then << "Good points: "<<#goodIdx<<"/"<<#pts<<endl;
+    goodNops := noethOpsAtPoints#(goodIdx#0);
+    
+    phi := map(RCC, ring goodNops#0, vars RCC);
+    sort flatten for op in goodNops list (
         bd := monomials phi op;
         bd = matrix{flatten entries bd / (mon -> S_((first exponents mon)_(depVars / index)))};
         done := false;
         d := 0;
         while not done do (
+            if debugLevel >= 1 then <<"Using degree "<<d<<" multiples"<<endl;
             G := transpose basis(0,d,S) ** transpose gens IS;
             M := sub(diff(bd, G), kP);
             K := myKernel M;
@@ -1772,6 +1780,7 @@ end
 
 
 restart
+debugLevel = 1
 debug loadPackage("DualSpaces", Reload => true)
 needsPackage "NumericalAlgebraicGeometry"
 needsPackage "Bertini"
@@ -1785,6 +1794,9 @@ f3 = x_2^2*x_3*x_4 - x_1*x_2*x_4^2 + x_4^4 - x_1*x_2*x_3*x_5 + x_1^2*x_4*x_5 - 2
 I = ideal(f1,f2,f3)
 primes = minimalPrimes I
 P = primes#0
+
+elapsedTime hybridNoetherianOperators(I, primes#4)
+apply(100,i->elapsedTime hybridNoetherianOperators(I, primes#4, Tolerance => 1e-4))
 
 primes / (P -> elapsedTime hybridNoetherianOperators(I,P))
 
