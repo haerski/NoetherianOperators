@@ -678,6 +678,7 @@ myKernel = method()
 myKernel Matrix := Matrix => MM -> (
     (M,pivs) := rowReduce(MM, true);
     nonPivs := toList(0..<numColumns M) - set pivs;
+    if #nonPivs == 0 then (R := ring MM; return map(R^(numColumns MM), R^0, 0));
     -transpose matrix (for j in nonPivs list (
             apply(numColumns M, i -> if member(i,pivs) then (
                 pivRow := position(toList(0..<numRows M), k -> M_(k,i) != 0);
@@ -690,7 +691,7 @@ myKernel Matrix := Matrix => MM -> (
 )
 
 
-noetherianOperators = method(Options => {DegreeLimit => 10, DependentSet => null}) 
+noetherianOperators = method(Options => {DegreeLimit => 5, DependentSet => null}) 
 noetherianOperators (Ideal, Ideal) := List => opts -> (I, P) -> (
     R := ring I;
     depVars := if opts.DependentSet === null then gens R - set support first independentSets P
