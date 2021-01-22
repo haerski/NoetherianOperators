@@ -1,24 +1,11 @@
 -- Example computation from the paper “Primary Ideals and Their
 -- Differential Equations” by Yairon Cid-Ruiz, Roser Homs and Bernd Sturmfels
 ----------------------------------------------------
---- Computes the join of two ideals
-joinIdeals = (J, K) ->
-(
-     v := symbol v;
-     w := symbol w;
-     R := ring J;
-     n := numgens R;
-     T := (coefficientRing R)[v_1..v_n, w_1..w_n];
-     Q := ((map(T, R, toList(v_1..v_n))) J) + ((map(T, R, toList(w_1..w_n))) K);
-     S := T / Q;
-     F := map(S, R, apply(n, j -> v_(j+1) + w_(j+1)));
-     ker F
-)
-
+restart
+needsPackage "NoetherianOperators"
 ----------------------------------------------------
 -- Example 1
 ---------------------------------------------------
-needsPackage "DualSpaces"
 U= QQ[x_1,x_2,x_3,x_4,u_1,u_2,u_3,u_4,y_1,y_2]
 A = matrix {{u_3,u_1,u_2},{u_1,u_2,u_4}}
 PP = minors(2,A)
@@ -28,7 +15,7 @@ J=ideal{eliminate(JJ,{u_1,u_2,u_3,u_4,y_1,y_2})}
 R=QQ[x_1,x_2,x_3,x_4]
 F=map(R,U)
 Q=F(J)
-noetherianOperators(Q)
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 
 ----------------------------------------------------
 ----------------------------------------------------
@@ -37,7 +24,7 @@ noetherianOperators(Q)
 
 R=QQ[x_1,x_2,x_3,x_4]
 Q=ideal{x_1^2,x_1*x_2,x_1*x_3,x_1*x_4-x_3^2+x_1,x_3^2*x_4-x_2^2,x_3^2*x_4-x_3^2-x_2*x_3+2*x_1}
-noetherianOperators(Q)
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 
 ------------------------------------------
 
@@ -46,7 +33,7 @@ MM = matrix {{x_3,x_1,x_2},{x_1,x_2,x_4}}
 P = minors(2,MM)
 M=ideal{x_1^2,x_2^2,x_3^2,x_4^2}
 Q=joinIdeals(P,M)
-noetherianOperators(Q)
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 
 ----------------------------------------------------
 ----------------------------------------------------
@@ -54,7 +41,7 @@ noetherianOperators(Q)
 ---------------------------------------------------
 R = QQ[x_1, x_2, x_3]
 Q = ideal(x_1^2, x_2^2, x_1-x_2*x_3)
-noetherianOperators Q
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 ----------------------------------------------------
 ----------------------------------------------------
 
@@ -77,20 +64,20 @@ isPrime Q1
 ---- the Noetherian operators of Q2
 isPrime Q2
 P2 = radical Q2 -- it is equal to (x_1, x_2, x_3)
-noetherianOperators Q2
+noetherianOperators(Q2, Strategy => "MacaulayMatrix")
 
 ---- the Noetherian operators of Q3
 isPrime Q3
 P3 = radical Q3 -- it is equal to (x2, x3, x4)
 F = map(R, R, {x_4, x_1, x_2, x_3}) -- change of variables to get Noether normal position
 Q3' = F Q3
-noetherianOperators Q3'
+noetherianOperators(Q3', Strategy => "MacaulayMatrix")
 
 ---- the Noetherian operators of Q4
 isPrime Q4
 P4 = radical Q4 -- it is equal to (x1, x2, x3, x4)
 -- no need to "take-out" anyone
-noetherianOperators Q4
+noetherianOperators(Q4, Strategy => "MacaulayMatrix")
 ----------------------------------------------------
 ----------------------------------------------------
 
@@ -101,7 +88,7 @@ noetherianOperators Q4
 R = QQ[x_1,x_2,x_3]
 Q = ideal(random(3, R), random(2, R), random(2, R), random(4, R))
 assert(dim Q == 0)
-noetherianOperators Q
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 ----------------------------------------------------
 ----------------------------------------------------
 
@@ -111,7 +98,7 @@ noetherianOperators Q
 ---------------------------------------------------
 R = QQ[x_1,x_2,x_3]
 Q = ideal(x_1^2, x_2^2, x_3^2, x_1*x_2 + x_1*x_3 +x_2*x_3)
-noetherianOperators Q
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 ----------------------------------------------------
 ----------------------------------------------------
 
@@ -125,9 +112,9 @@ dim J
 primDec = primaryDecomposition J
 -- here we will only take care of the first primary component...
 Q = primDec_0
-noetherianOperators(Q)
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 -- Alternatively, we can compute these without doing a primary decomposition
-noetherianOperators(J, (minimalPrimes J)#0)
+noetherianOperators(J, (minimalPrimes J)#0, Strategy => "MacaulayMatrix")
 ----------------------------------------------------
 ----------------------------------------------------
 
@@ -139,7 +126,7 @@ R = QQ[x_1,x_2,x_3]
 mm= ideal vars R
 n=4
 Q=mm^n
-noetherianOperators(Q)
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 ----------------------------------------------------
 ----------------------------------------------------
 
@@ -149,7 +136,7 @@ noetherianOperators(Q)
 ---------------------------------------------------
 R = QQ[x_1,x_2,x_3]
 Q = ideal(x_1^2,x_2^2,x_3^2)
-noetherianOperators(Q)
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 ----------------------------------------------------
 ----------------------------------------------------
 

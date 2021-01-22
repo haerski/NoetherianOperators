@@ -1,12 +1,8 @@
 restart
 -- Symbolic primary decomposition via Noetherian Operators
 needsPackage "NumericalAlgebraicGeometry"
-needsPackage "Bertini"
 needsPackage "K3Carpets"
-needsPackage "MinimalPrimes"
-needsPackage "DualSpaces"
-
-installMinprimes()
+needsPackage "NoetherianOperators"
 
 setRandomSeed 1
 
@@ -33,38 +29,34 @@ sort noetherianOperators(J, primes#6)
 -- Numerical version
 S = CC monoid R
 J' = sub(J,S)
---computes a numerical irreductible decomposition
+--computes a numerical irreducible decomposition
 elapsedTime nid = bertiniPosDimSolve(J', BertiniInputConfiguration => {RandomSeed => 1})
+
+-- Define a sampler function that samples on the first component of the numerical irreducible decomposition
+sampler = (n,I) -> bertiniSample(n, ws, BertiniInputConfiguration => {RandomSeed => 1});
 
 -- sample points on the first component
 ws = (components nid)#0 -- corresponds to primes#2
-pts = bertiniSample(50, ws, BertiniInputConfiguration => {RandomSeed => 1});
 -- Compute Noetherian operators. The dependent set can be found using a heuristic on the bottom of this file
-numericalNoetherianOperators(J', pts, DependentSet => {S_"x_1", S_"x_2", S_"x_3", S_"y_2", S_"y_3"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
+numericalNoetherianOperators(J', Sampler => sampler, DependentSet => {S_"x_1", S_"x_2", S_"x_3", S_"y_2", S_"y_3"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
 
 ws = (components nid)#1 -- corresponds to primes#4
-pts = bertiniSample(350, ws, BertiniInputConfiguration => {RandomSeed => 1});
-numericalNoetherianOperators(J', pts, DependentSet => {S_"x_0", S_"x_1", S_"x_2", S_"y_1", S_"y_2"}, InterpolationTolerance => 1e-5, NoetherianDegreeLimit => 3)
+numericalNoetherianOperators(J', Sampler => sampler, DependentSet => {S_"x_0", S_"x_1", S_"x_2", S_"y_1", S_"y_2"}, InterpolationTolerance => 1e-5, NoetherianDegreeLimit => 3)
 
 ws = (components nid)#2 -- corresponds to primes#3
-pts = bertiniSample(100, ws, BertiniInputConfiguration => {RandomSeed => 1});
-numericalNoetherianOperators(J', pts, DependentSet => {S_"x_0", S_"x_1", S_"y_0", S_"y_1", S_"y_2"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
+numericalNoetherianOperators(J', Sampler => sampler, DependentSet => {S_"x_0", S_"x_1", S_"y_0", S_"y_1", S_"y_2"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
 
 ws = (components nid)#3 -- corresponds to primes#1
-pts = bertiniSample(350, ws, BertiniInputConfiguration => {RandomSeed => 1});
-numericalNoetherianOperators(J', pts, DependentSet => {S_"x_1", S_"x_2", S_"y_1", S_"y_2", S_"y_3"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 3)
+numericalNoetherianOperators(J', Sampler => sampler, DependentSet => {S_"x_1", S_"x_2", S_"y_1", S_"y_2", S_"y_3"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 3)
 
 ws = (components nid)#4 -- corresponds to primes#5
-pts = bertiniSample(120, ws, BertiniInputConfiguration => {RandomSeed => 1});
-numericalNoetherianOperators(J', pts, DependentSet => {S_"x_0", S_"x_1", S_"x_2", S_"x_3", S_"y_1"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
+numericalNoetherianOperators(J', Sampler => sampler, DependentSet => {S_"x_0", S_"x_1", S_"x_2", S_"x_3", S_"y_1"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
 
 ws = (components nid)#5 -- corresponds to primes#0
-pts = bertiniSample(120, ws, BertiniInputConfiguration => {RandomSeed => 1});
-numericalNoetherianOperators(J', pts, DependentSet => {S_"x_0", S_"y_0", S_"y_1", S_"y_2", S_"y_3"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
+numericalNoetherianOperators(J', Sampler => sampler, DependentSet => {S_"x_0", S_"y_0", S_"y_1", S_"y_2", S_"y_3"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
 
 ws = (components nid)#6 -- corresponds to primes#6
-pts = bertiniSample(120, ws, BertiniInputConfiguration => {RandomSeed => 1});
-numericalNoetherianOperators(J', pts, DependentSet => {S_"x_0", S_"x_1", S_"x_2", S_"y_0", S_"y_1"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
+numericalNoetherianOperators(J', Sampler => sampler, DependentSet => {S_"x_0", S_"x_1", S_"x_2", S_"y_0", S_"y_1"}, InterpolationTolerance => 1e-6, NoetherianDegreeLimit => 2)
 
 
 
