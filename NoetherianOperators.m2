@@ -1,8 +1,8 @@
 -- -*- coding: utf-8 -*-
 newPackage(
     "NoetherianOperators",
-    Version => "1.1",
-    Date => "Dec 22, 2020",
+    Version => "1.2",
+    Date => "Jan 23, 2020",
     Authors => {
         {Name => "Robert Krone", 
         Email => "krone@math.gatech.edu"},
@@ -1014,6 +1014,7 @@ numNoethOpsAtPoint (Ideal, Matrix) := List => true >> opts -> (I, p) -> (
         if member(R_i,depVars) then R_i+p_(0,i) else p_(0,i)
         ))};
     RtoS := map(S,R,sub(subs,S));
+
     L := macaulayMatrixKernel(RtoS I, coefficientRing S, opts, DegreeLimit => degLim, Tolerance => tol, Rational => true);
     matrixToDiffOps(promote(last L, R), sub(first L, R))
 )
@@ -1782,7 +1783,7 @@ doc ///
 	       gCorners(p, I)
 	  Text
 	       If the optional argument @TT "ProduceSB"@ is set to true, the output is instead a matrix of elements of the ideal
-	       with the p translated to the origin such that the lead terms generate the inital ideal, i.e. a standard basis.
+	       with the p translated to the origin such that the lead terms generate the initial ideal, i.e. a standard basis.
 	       Note that the coordinates of the standard basis elements are translated to be centered at the point p.
 	  Example
 	       S = gCorners(p, I, ProduceSB=>true)
@@ -3079,7 +3080,7 @@ Description
         @UL { TO noetherianOperators, TO specializedNoetherianOperators, TO numericalNoetherianOperators} @
 
         pass to a polynomial ring in the dependent variables, with the coefficient field being the fraction field
-        of a polynomial ring in the independent varaibles. Because of this, computing Noetherian operators requires
+        of a polynomial ring in the independent variables. Because of this, computing Noetherian operators requires
         a knowledge of a dependent set of variables, which can be set using the option {\tt DependentSet}. Note that
         the $dx$-monomials will only involve dependent variables.
     Example
