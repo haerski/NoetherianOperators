@@ -12,7 +12,7 @@ x = symbol x;
 R = QQ[x_1..x_3]
 Q = ideal((x_1^2 - x_3)^2, x_2 - x_3 * (x_1^2 - x_3))
 P = radical Q
-noetherianOperators Q
+noetherianOperators(Q, Strategy => "MacaulayMatrix")
 
 -- Example 3.17, through punctual Hilbert scheme
 y = symbol y;
@@ -20,7 +20,7 @@ F = frac(R/P)
 S = F[y_1,y_2]
 gamma = map(S,R, {y_1 + x_1, y_2 + x_2, x_3})
 I = gamma Q + (ideal(y_1,y_2))^2
-zeroDimensionalDual(origin S, I)
+entries gens zeroDimensionalDual(origin S, I)
 
 -- Example 3.18, see the file ex318.m2
 
@@ -28,8 +28,8 @@ zeroDimensionalDual(origin S, I)
 R = QQ[t,x,y]
 I = ideal(x^2, y^2 - x*t)
 specializedNoetherianOperators(I, point{{1,0,0}}, DependentSet => {x,y})
--- Symbolic version
-noetherianOperators(I, DependentSet => {x,y}) // netList
+-- Symbolic version, equal up to a constant multiple
+noetherianOperators(I, DependentSet => {x,y})
 
 
 -- Example 4.4, see the file ex318.m2
@@ -49,20 +49,20 @@ S = RR[t]
 numBasis = denBasis = basis(0,1,S)
 rationalInterpolation(ts, vals, numBasis, denBasis) -- output is in the form (numerator, denominator)
 -- hence we conclude that the coefficient of dx*dy is 1/t.
---Symbolically
-noetherianOperators(I, DependentSet => {x,y}) // netList
-
-
 -- The interpoltation procedure above is automated in numericalNoetherianOperators
 -- Due to limitations of Macaulay2, this function does not clear denominators
 numericalNoetherianOperators(I, DependentSet => {x,y})
+--Symbolically
+noetherianOperators(I, DependentSet => {x,y}) // netList
 
--- Example 4.7 is in the file carpet2.m2
+-- Example 4.7 is in the file ex47.m2
 -- Example 4.8 is in the file ex318.m2
 
-
-
-
-
--- Example 4.4 is in the file ex44.m2
--- Example 4.5 is in the file ex45.m2
+-- Example 5.3
+R = QQ[x,y,z]
+f = (x*y - z)^2
+I = ideal f
+nops = noetherianOperators I
+NG = ideal(nops#0(f), nops#1(f))
+isSubset(I, NG)
+isSubset(NG, I)

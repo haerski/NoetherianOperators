@@ -27,16 +27,16 @@ p = first bertiniSample(1, witness, BertiniInputConfiguration => {RandomSeed => 
 elapsedTime specializedNoetherianOperators(I, p, DependentSet => gens R - set support first independentSets P)
 -- Using the hybrid method, we reduce the computation time to around four seconds.
 elapsedTime noetherianOperators(I,P, Strategy => "Hybrid", KernelStrategy => "Gaussian")
+-- This computes a primary decomposition using the Hybrid strategy
+elapsedTime nops = primes / (P -> elapsedTime noetherianOperators(I,P, Strategy => "Hybrid", KernelStrategy => "Gaussian"))
 
-
-noetherianOperators(I, primes#0)
-noetherianOperators(I, primes#0, Strategy => "Hybrid", KernelStrategy => "Default")
-elapsedTime noetherianOperators(I, primes#4, Strategy => "Hybrid", KernelStrategy => "Gaussian")
 
 
 -- Example 4.8
-witness = first components bertiniPosDimSolve(P, BertiniInputConfiguration => {RandomSeed => 1})
-numericalNoetherianOperators(I,
+witness = first components bertiniPosDimSolve(P, BertiniInputConfiguration => {RandomSeed => 2})
+-- The coefficients that couldn't be interpolated within the interpolation degree limit
+-- and tolerance will appear as question marks
+netList numericalNoetherianOperators(I,
 	Sampler => (n, I) -> bertiniSample(n,witness),
 	InterpolationDegreeLimit => 1,
-	DependentSet => gens R - set support first independentSets I)
+	DependentSet => gens R - set support first independentSets P)

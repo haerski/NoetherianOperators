@@ -875,6 +875,7 @@ macaulayMatrixKernel := true >> opts -> (I, kP) -> (
     if debugLevel > 1 then <<opts<<endl;
     tol := if not opts.?Tolerance then getTolerance(S,opts) else opts.Tolerance;
     degLim := if not opts.?DegreeLimit then -1 else opts.DegreeLimit;
+    if instance(degLim, InfiniteNumber) then degLim = -1;
     rat := if not opts.?Rational then false else opts.Rational;
     kerStrat := if not opts.?KernelStrategy then "Default" else opts.KernelStrategy;
     useBM := if not opts.?IntegralStrategy then null else opts.IntegralStrategy;
@@ -935,6 +936,7 @@ noetherianOperatorsViaMacaulayMatrix = method(Options => true)
 noetherianOperatorsViaMacaulayMatrix (Ideal, Ideal) := List => true >> opts -> (I, P) -> (
     R := ring I;
     m := if opts.?DegreeLimit then opts.DegreeLimit else -1;
+    if instance(m, InfiniteNumber) then m = -1;
     rat := if opts.?Rational then opts.Rational else false;
 
     t := getTolerance(R,opts);
@@ -1012,7 +1014,6 @@ numNoethOpsAtPoint (Ideal, Matrix) := List => true >> opts -> (I, p) -> (
         if member(R_i,depVars) then R_i+p_(0,i) else p_(0,i)
         ))};
     RtoS := map(S,R,sub(subs,S));
-
     L := macaulayMatrixKernel(RtoS I, coefficientRing S, opts, DegreeLimit => degLim, Tolerance => tol, Rational => true);
     matrixToDiffOps(promote(last L, R), sub(first L, R))
 )
@@ -1046,7 +1047,7 @@ hybridNoetherianOperators (Ideal, Ideal, Matrix) := List => true >> opts -> (I,P
     IS := sub(I,S);
     kP := toField(S/PS);
     RCC := (ring pt) monoid R;
-    nopsAtPoint := numNoethOpsAtPoint(sub(I,RCC), pt, opts, DependentSet => depVars / (i->sub(i,RCC)));
+    nopsAtPoint := numNoethOpsAtPoint(sub(I,RCC), pt, opts, DependentSet => depVars / (i->sub(i,RCC)), IntegralStrategy => false);
     sort flatten for op in nopsAtPoint list (
         dBasis := sub(matrix{keys op / (m -> R_(first exponents m))}, S);
         maxdeg := flatten entries dBasis / sum @@ degree // max;
@@ -1088,6 +1089,8 @@ numericalNoetherianOperators = method(Options => true)
 -- option Sampler is a function f(n, I) which computes a list of n distinct points on the variety of I
 -- other valid options: InterpolationDegreeLimit, InterpolationTolerance
 numericalNoetherianOperators(Ideal) := List => true >> opts -> (I) -> (
+    --error"dbg";
+    --(specializedNoetherianOperators(I, matrix{{1_CC,1,1,1,1,1}}, IntegralStrategy => false, Tolerance => 1e-6, DependentSet => gens R - set support first independentSets P)) / keys / sort // netList
     tol := if not opts.?Tolerance then defaultT(CC) else opts.Tolerance;
     sampler := if opts.?Sampler then opts.Sampler else (
         ws := first components bertiniPosDimSolve(I);
@@ -1102,9 +1105,9 @@ numericalNoetherianOperators(Ideal) := List => true >> opts -> (I) -> (
     R := (ultimate(coefficientRing, ring matrix goodPoint)) monoid S;
     J := sub(I,R);
 
-
-
-    nopsTemplate := numNoethOpsAtPoint(J, goodPoint, opts, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => noethDegLim);
+    --here integral strategy must be false to get the same kernel basis as in interpolateFromTemplate
+    nopsTemplate := numNoethOpsAtPoint(J, goodPoint, opts, DependentSet => depSet / (i -> sub(i,R)), Tolerance => tol, DegreeLimit => noethDegLim, IntegralStrategy => false);
+    --nopsTemplate := specializedNoetherianOperators(I, goodPoint, opts, DependentSet => depSet, Tolerance => tol, DegreeLimit => noethDegLim);
     if not S.?cache then S.cache = new CacheTable;
     S.cache#"interp point list" = new List;
     nopsTemplate / (tmpl -> interpolateFromTemplate(I, tmpl, opts, Tolerance => tol, Sampler => sampler))
@@ -1189,8 +1192,10 @@ interpolateFromTemplate = true >> opts -> (I, tmpl) -> (
                     nop := specializedNopsFromTemplate(I, p, tmpl, opts, Tolerance => opts.Tolerance);
                     if nop === null then continue else {nop, p}
                 );
-                opList = opList | first transpose nopList;
-                ptList = ptList | last transpose nopList;
+                if #nopList > 0 then (
+                    opList = opList | first transpose nopList;
+                    ptList = ptList | last transpose nopList;
+                );
             );
             
             interpPoints := numColumns numBasis + numColumns denBasis + 1;

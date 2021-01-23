@@ -1,5 +1,7 @@
 -- Example computation from the paper “Primary Ideals and Their
 -- Differential Equations” by Yairon Cid-Ruiz, Roser Homs and Bernd Sturmfels
+-- The option Strategy => "MacaulayMatrix" uses the algorithm outlines in
+-- "Noetherian operators and primary decomposition" by Chen et al.
 ----------------------------------------------------
 restart
 needsPackage "NoetherianOperators"

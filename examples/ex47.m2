@@ -22,7 +22,7 @@ S = CC monoid R
 I' = sub(I,S)
 elapsedTime nid = bertiniPosDimSolve(I', BertiniInputConfiguration => {RandomSeed => 1})
 
-
+-- We want a sampler that can sample points on a witness set called ws
 sampler = (n,I) -> bertiniSample(n, ws, BertiniInputConfiguration => {RandomSeed => 1});
 
 ws = (components nid)#0
@@ -33,4 +33,4 @@ elapsedTime numericalNoetherianOperators(I', Sampler => sampler, DependentSet =>
 
 
 -- Noetherian operators of J
-noetherianOperators(J, DependentSet => {1, 2, 4, 5, 6} / (i -> R_i))
+noetherianOperators(J)
