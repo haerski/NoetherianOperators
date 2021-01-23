@@ -19,7 +19,7 @@ newPackage(
     PackageExports => {"Bertini", "NumericalLinearAlgebra", "NAGtypes"},
     PackageImports => {"Dmodules", "PrimaryDecomposition"},
     AuxiliaryFiles => false,
-    DebuggingMode => true,
+    DebuggingMode => false,
     Keywords => {"Numerical Algebraic Geometry", "Commutative Algebra"}
 )
 
@@ -1089,8 +1089,6 @@ numericalNoetherianOperators = method(Options => true)
 -- option Sampler is a function f(n, I) which computes a list of n distinct points on the variety of I
 -- other valid options: InterpolationDegreeLimit, InterpolationTolerance
 numericalNoetherianOperators(Ideal) := List => true >> opts -> (I) -> (
-    --error"dbg";
-    --(specializedNoetherianOperators(I, matrix{{1_CC,1,1,1,1,1}}, IntegralStrategy => false, Tolerance => 1e-6, DependentSet => gens R - set support first independentSets P)) / keys / sort // netList
     tol := if not opts.?Tolerance then defaultT(CC) else opts.Tolerance;
     sampler := if opts.?Sampler then opts.Sampler else (
         ws := first components bertiniPosDimSolve(I);
