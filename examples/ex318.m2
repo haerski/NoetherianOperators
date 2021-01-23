@@ -27,7 +27,10 @@ p = first bertiniSample(1, witness, BertiniInputConfiguration => {RandomSeed => 
 elapsedTime specializedNoetherianOperators(I, p, DependentSet => gens R - set support first independentSets P)
 -- Using the hybrid method, we reduce the computation time to around four seconds.
 elapsedTime noetherianOperators(I,P, Strategy => "Hybrid", KernelStrategy => "Gaussian")
--- This computes a primary decomposition using the Hybrid strategy
+-- The symbolic computation is the same as the one on line 15
+elapsedTime noetherianOperators(I,P, KernelStrategy => "Gaussian")
+
+-- This computes a full primary decomposition using the Hybrid strategy
 elapsedTime nops = primes / (P -> elapsedTime noetherianOperators(I,P, Strategy => "Hybrid", KernelStrategy => "Gaussian"))
 
 
