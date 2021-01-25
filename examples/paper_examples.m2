@@ -42,9 +42,12 @@ I = ideal(x^2, y^2 - x*t)
 pts = toList(1..6) / (i -> matrix{{i_QQ, 0, 0}})
 nops = pts / (p -> specializedNoetherianOperators(I, p, DependentSet => {x,y}));
 netList nops
--- interpolating e.g. last coefficient
-vals = {1, 1/2, 1/3, 1/4, 1/5, 1/6} -- coefficient in _dx*dy
-ts = {matrix{{1}},matrix{{2}},matrix{{3}},matrix{{4}},matrix{{5}},matrix{{6}}} -- corresponding value of t
+-- interpolating e.g. coefficient of dx*dy
+vals = (transpose nops)#3 / 
+	(d -> flatten entries last coefficients(d, Monomials => {x*y})) //
+	flatten /
+	(d -> sub(d, coefficientRing ring d))
+ts = pts / (m -> matrix m_0)
 S = RR[t]
 numBasis = denBasis = basis(0,1,S)
 rationalInterpolation(ts, vals, numBasis, denBasis) -- output is in the form (numerator, denominator)
@@ -53,7 +56,7 @@ rationalInterpolation(ts, vals, numBasis, denBasis) -- output is in the form (nu
 -- Due to limitations of Macaulay2, this function does not clear denominators
 numericalNoetherianOperators(I, DependentSet => {x,y})
 --Symbolically
-noetherianOperators(I, DependentSet => {x,y}) // netList
+noetherianOperators(I, DependentSet => {x,y})
 
 -- Example 4.7 is in the file ex47.m2
 -- Example 4.8 is in the file ex318.m2
@@ -66,3 +69,4 @@ nops = noetherianOperators I
 NG = ideal(nops#0(f), nops#1(f))
 isSubset(I, NG)
 isSubset(NG, I)
+radical I == radical NG

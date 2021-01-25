@@ -21,12 +21,19 @@ netList nops#3
 netList nops#4
 
 -- Example 4.4
+R = QQ[x_0..x_5]
+P = minors(2,matrix{{x_0,x_1,x_3,x_4},{x_1,x_2,x_4,x_5}});
+f1 = x_1^4 - 2*x_0*x_1^2*x_2 + x_0^2*x_2^2 + x_1*x_2*x_3*x_4 - x_0*x_2*x_4^2 - x_1^2*x_3*x_5 + x_0*x_1*x_4*x_5
+f2 = x_1^4 - 2*x_0*x_1^2*x_2 + x_0^2*x_2^2 + x_1*x_2*x_3*x_4 - x_1^2*x_4^2 - x_0*x_2*x_3*x_5 + x_0*x_1*x_4*x_5
+f3 = x_2^2*x_3*x_4 - x_1*x_2*x_4^2 + x_4^4 - x_1*x_2*x_3*x_5 + x_1^2*x_4*x_5 - 2*x_3*x_4^2*x_5 + x_3^2*x_5^2
+I = ideal(f1,f2,f3)
+primes = minimalPrimes I
 witness = first components bertiniPosDimSolve(P, BertiniInputConfiguration => {RandomSeed => 1})
 p = first bertiniSample(1, witness, BertiniInputConfiguration => {RandomSeed => 1})
 -- Computing specialized Noetherian operators is very fast (p must lie on the component of interest)
 elapsedTime specializedNoetherianOperators(I, p, DependentSet => gens R - set support first independentSets P)
 -- Using the hybrid method, we reduce the computation time to around four seconds.
-elapsedTime noetherianOperators(I,P, Strategy => "Hybrid", KernelStrategy => "Gaussian")
+elapsedTime noetherianOperators(I,P, Strategy => "Hybrid", KernelStrategy => "Gaussian", Sampler => I -> p)
 -- The symbolic computation is the same as the one on line 15
 elapsedTime noetherianOperators(I,P, KernelStrategy => "Gaussian")
 
@@ -36,10 +43,22 @@ elapsedTime nops = primes / (P -> elapsedTime noetherianOperators(I,P, Strategy 
 
 
 -- Example 4.8
+x = symbol x
+R = QQ[x_0..x_5]
+P = minors(2,matrix{{x_0,x_1,x_3,x_4},{x_1,x_2,x_4,x_5}});
+f1 = x_1^4 - 2*x_0*x_1^2*x_2 + x_0^2*x_2^2 + x_1*x_2*x_3*x_4 - x_0*x_2*x_4^2 - x_1^2*x_3*x_5 + x_0*x_1*x_4*x_5
+f2 = x_1^4 - 2*x_0*x_1^2*x_2 + x_0^2*x_2^2 + x_1*x_2*x_3*x_4 - x_1^2*x_4^2 - x_0*x_2*x_3*x_5 + x_0*x_1*x_4*x_5
+f3 = x_2^2*x_3*x_4 - x_1*x_2*x_4^2 + x_4^4 - x_1*x_2*x_3*x_5 + x_1^2*x_4*x_5 - 2*x_3*x_4^2*x_5 + x_3^2*x_5^2
+I = ideal(f1,f2,f3)
+primes = minimalPrimes I
 witness = first components bertiniPosDimSolve(P, BertiniInputConfiguration => {RandomSeed => 2})
 -- The coefficients that couldn't be interpolated within the interpolation degree limit
 -- and tolerance will appear as question marks
+needsPackage "NumericalImplicitization"
+smpl = (n,I) -> apply(n, i -> point sub(matrix realPoint(P, Tolerance => 1e-12), CC))
+
 netList numericalNoetherianOperators(I,
-	Sampler => (n, I) -> bertiniSample(n,witness),
+	Sampler => smpl,
+	TrustedPoint => point matrix{{1_CC,1,1,1,1,1}},
 	InterpolationDegreeLimit => 1,
 	DependentSet => gens R - set support first independentSets P)
